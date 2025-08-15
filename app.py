@@ -1,6 +1,5 @@
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
-from collections import defaultdict
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -24,4 +23,4 @@ def handle_seen(data):
     emit('seen', data, broadcast=True)
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    socketio.run(app, host='0.0.0.0', port=10000)
