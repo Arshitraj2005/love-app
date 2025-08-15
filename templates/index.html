@@ -6,7 +6,8 @@
 </head>
 <body>
   <div id="loginBox">
-    <input id="passInput" type="password" placeholder="Enter secret..." />
+    <h2>Enter Today's Secret</h2>
+    <input id="passwordInput" type="password" placeholder="Enter today's date..." />
     <button onclick="checkPassword()">Unlock</button>
   </div>
 
@@ -17,7 +18,6 @@
   <script>
     const socket = io();
     const chatBox = document.getElementById('chatBox');
-    const correctPassword = "bhoot";
 
     let myId = localStorage.getItem('user_id');
     if (!myId) {
@@ -26,8 +26,9 @@
     }
 
     function checkPassword() {
-      const entered = document.getElementById('passInput').value;
-      if (entered === correctPassword) {
+      const entered = document.getElementById('passwordInput').value;
+      const today = new Date().getDate().toString(); // e.g. "15"
+      if (entered === today) {
         document.getElementById('loginBox').style.display = 'none';
         document.getElementById('chatBox').style.display = 'block';
         document.getElementById('msgInput').style.display = 'inline';
@@ -50,10 +51,6 @@
       msg.id = data.id;
       msg.innerText = (data.sender_id === myId ? "Me: " : "You: ") + data.message;
       chatBox.appendChild(msg);
-
-      setTimeout(() => {
-        socket.emit('seen', { id: data.id });
-      }, 5000);
     });
 
     socket.on('delete_message', data => {
