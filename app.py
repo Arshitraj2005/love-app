@@ -1,18 +1,3 @@
-from flask import Flask, render_template
-from flask_socketio import SocketIO, emit
-from threading import Lock
-import os
-
-app = Flask(__name__)
-socketio = SocketIO(app)
-messages = {}
-message_order = []
-lock = Lock()
-
-@app.route('/')
-def index():
-    return render_template('index.html')
-
 @socketio.on('send_message')
 def handle_message(data):
     with lock:
@@ -29,18 +14,8 @@ def handle_message(data):
             'sender_id': data['sender_id']
         }, broadcast=True)
 
-        if len(message_order) > 4:
+        # Keep only the latest 8 messages
+        if len(message_order) > 8:
             oldest_id = message_order.pop(0)
             messages.pop(oldest_id, None)
             emit('delete_message', {'id': oldest_id}, broadcast=True)
-
-@socketio.on('seen')
-def handle_seen(data):
-    msg_id = data['id']
-    if msg_id in messages:
-        messages.pop(msg_id, None)
-        emit('delete_message', {'id': msg_id}, broadcast=True)
-
-if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    socketio.run(app, host="0.0.0.0", port=port)
