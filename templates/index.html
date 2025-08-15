@@ -5,15 +5,9 @@
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 <body>
-  <div id="loginBox">
-    <h2>Enter Today's Secret</h2>
-    <input id="passwordInput" type="password" placeholder="Enter today's date..." />
-    <button onclick="checkPassword()">Unlock</button>
-  </div>
-
-  <div id="chatBox" style="display:none;"></div>
-  <input id="msgInput" placeholder="Type your message..." style="display:none;" />
-  <button onclick="sendMessage()" style="display:none;">Send</button>
+  <div id="chatBox"></div>
+  <input id="msgInput" placeholder="Type your message..." />
+  <button onclick="sendMessage()">Send</button>
 
   <script>
     const socket = io();
@@ -22,19 +16,6 @@
     if (!myId) {
       myId = Math.random().toString(36).substring(2, 10);
       localStorage.setItem('user_id', myId);
-    }
-
-    function checkPassword() {
-      const entered = document.getElementById('passwordInput').value;
-      const today = new Date().getDate().toString(); // e.g. "15"
-      if (entered === today) {
-        document.getElementById('loginBox').style.display = 'none';
-        document.getElementById('chatBox').style.display = 'block';
-        document.getElementById('msgInput').style.display = 'inline';
-        document.querySelector('button[onclick="sendMessage()"]').style.display = 'inline';
-      } else {
-        alert("Wrong password. Try again.");
-      }
     }
 
     function sendMessage() {
@@ -46,17 +27,12 @@
     }
 
     socket.on('receive_message', data => {
-      chatBox.innerHTML = ''; // Clear old messages
+      chatBox.innerHTML = '';
       for (const [sender, message] of Object.entries(data.messages)) {
         const msg = document.createElement('div');
         msg.innerText = (sender === myId ? "Me: " : "You: ") + message;
         chatBox.appendChild(msg);
       }
-    });
-
-    socket.on('delete_message', data => {
-      const msg = document.getElementById(data.id);
-      if (msg) msg.remove();
     });
   </script>
 </body>
