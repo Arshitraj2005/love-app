@@ -5,27 +5,34 @@
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 <body>
+  <div id="chatBox"></div>
   <input id="msgInput" placeholder="Type your message..." />
   <button onclick="sendMessage()">Send</button>
-  <div id="chatBox"></div>
 
   <script>
     const socket = io();
     const chatBox = document.getElementById('chatBox');
 
+    let myId = localStorage.getItem('user_id');
+    if (!myId) {
+      myId = Math.random().toString(36).substring(2, 10);
+      localStorage.setItem('user_id', myId);
+    }
+
     function sendMessage() {
       const msg = document.getElementById('msgInput').value;
-      socket.emit('send_message', { message: msg });
-      document.getElementById('msgInput').value = '';
+      if (msg.trim() !== '') {
+        socket.emit('send_message', { message: msg, sender_id: myId });
+        document.getElementById('msgInput').value = '';
+      }
     }
 
     socket.on('new_message', data => {
       const msg = document.createElement('div');
       msg.id = data.id;
-      msg.innerText = data.message;
+      msg.innerText = (data.sender_id === myId ? "Me: " : "You: ") + data.message;
       chatBox.appendChild(msg);
 
-      // Simulate seen after 5 sec
       setTimeout(() => {
         socket.emit('seen', { id: data.id });
       }, 5000);
