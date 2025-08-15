@@ -24,6 +24,23 @@
       max-width: 600px;
       width: 100%;
       text-align: center;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #chatBox {
+      flex-grow: 1;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      text-align: left;
+      max-height: 300px;
+    }
+
+    #status {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 5px;
+      height: 20px;
     }
 
     input, button {
@@ -44,11 +61,6 @@
     button:hover {
       background-color: #357ab8;
     }
-
-    #chatBox {
-      margin-bottom: 10px;
-      text-align: left;
-    }
   </style>
 </head>
 <body>
@@ -59,46 +71,77 @@
   </div>
 
   <div class="chat-container" id="chatScreen" style="display:none;">
+    <div id="status"></div>
     <div id="chatBox"></div>
-    <input id="msgInput" placeholder="Type your message..." />
+    <input id="msgInput" placeholder="Type your message..." oninput="sendTyping()" />
     <button onclick="sendMessage()">Send</button>
+    <button onclick="logout()">Logout</button>
   </div>
 
   <script>
     const correctPassword = "23102007";
+    const ownerId = "arshit_owner"; // You can change this to your own ID
+    let myId = localStorage.getItem('user_id');
+
+    if (!myId) {
+      myId = Math.random().toString(36).substring(2, 10);
+      localStorage.setItem('user_id', myId);
+    }
 
     function checkPassword() {
       const input = document.getElementById('passwordInput').value;
       if (input === correctPassword) {
         document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('chatScreen').style.display = 'block';
+        document.getElementById('chatScreen').style.display = 'flex';
+        if (myId !== ownerId) {
+          console.log("🔔 Someone just logged in: " + myId);
+        }
       } else {
         alert("Wrong password!");
       }
     }
 
+    function logout() {
+      document.getElementById('chatScreen').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'flex';
+    }
+
     const socket = io();
     const chatBox = document.getElementById('chatBox');
-    let myId = localStorage.getItem('user_id');
-    if (!myId) {
-      myId = Math.random().toString(36).substring(2, 10);
-      localStorage.setItem('user_id', myId);
-    }
+    const status = document.getElementById('status');
 
     function sendMessage() {
       const msg = document.getElementById('msgInput').value;
       if (msg.trim() !== '') {
         socket.emit('send_message', { message: msg, sender_id: myId });
         document.getElementById('msgInput').value = '';
+        status.innerText = '';
       }
     }
 
+    function sendTyping() {
+      socket.emit('typing', { sender_id: myId });
+    }
+
     socket.on('receive_message', data => {
-      chatBox.innerHTML = '';
-      for (const [sender, message] of Object.entries(data.messages)) {
-        const msg = document.createElement('div');
-        msg.innerText = (sender === myId ? "Me: " : "You: ") + message;
-        chatBox.appendChild(msg);
+      const msg = document.createElement('div');
+      msg.innerText = (data.sender_id === myId ? "Me: " : "You: ") + data.message;
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      socket.emit('seen', { sender_id: data.sender_id });
+    });
+
+    socket.on('typing', data => {
+      if (data.sender_id !== myId) {
+        status.innerText = "Typing...";
+        setTimeout(() => { status.innerText = ""; }, 1000);
+      }
+    });
+
+    socket.on('seen', data => {
+      if (data.sender_id === myId) {
+        status.innerText = "Seen";
+        setTimeout(() => { status.innerText = ""; }, 2000);
       }
     });
   </script>
