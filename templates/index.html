@@ -3,13 +3,80 @@
 <head>
   <title>WhisperFade</title>
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+      backdrop-filter: blur(6px);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .chat-container, .login-container {
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+    }
+
+    input, button {
+      padding: 8px;
+      margin-top: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    button {
+      background-color: #4a90e2;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #357ab8;
+    }
+
+    #chatBox {
+      margin-bottom: 10px;
+      text-align: left;
+    }
+  </style>
 </head>
 <body>
-  <div id="chatBox"></div>
-  <input id="msgInput" placeholder="Type your message..." />
-  <button onclick="sendMessage()">Send</button>
+  <div class="login-container" id="loginScreen">
+    <h2>Enter Password</h2>
+    <input id="passwordInput" placeholder="Password..." type="password" />
+    <button onclick="checkPassword()">Enter</button>
+  </div>
+
+  <div class="chat-container" id="chatScreen" style="display:none;">
+    <div id="chatBox"></div>
+    <input id="msgInput" placeholder="Type your message..." />
+    <button onclick="sendMessage()">Send</button>
+  </div>
 
   <script>
+    const correctPassword = "23102007";
+
+    function checkPassword() {
+      const input = document.getElementById('passwordInput').value;
+      if (input === correctPassword) {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('chatScreen').style.display = 'block';
+      } else {
+        alert("Wrong password!");
+      }
+    }
+
     const socket = io();
     const chatBox = document.getElementById('chatBox');
     let myId = localStorage.getItem('user_id');
