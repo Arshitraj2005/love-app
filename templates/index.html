@@ -18,7 +18,6 @@
   <script>
     const socket = io();
     const chatBox = document.getElementById('chatBox');
-
     let myId = localStorage.getItem('user_id');
     if (!myId) {
       myId = Math.random().toString(36).substring(2, 10);
@@ -46,11 +45,13 @@
       }
     }
 
-    socket.on('new_message', data => {
-      const msg = document.createElement('div');
-      msg.id = data.id;
-      msg.innerText = (data.sender_id === myId ? "Me: " : "You: ") + data.message;
-      chatBox.appendChild(msg);
+    socket.on('receive_message', data => {
+      chatBox.innerHTML = ''; // Clear old messages
+      for (const [sender, message] of Object.entries(data.messages)) {
+        const msg = document.createElement('div');
+        msg.innerText = (sender === myId ? "Me: " : "You: ") + message;
+        chatBox.appendChild(msg);
+      }
     });
 
     socket.on('delete_message', data => {
