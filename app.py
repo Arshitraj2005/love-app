@@ -28,7 +28,6 @@ def handle_message(data):
             'sender_id': data['sender_id']
         }, broadcast=True)
 
-        # Delete oldest if more than 4 messages
         if len(message_order) > 4:
             oldest_id = message_order.pop(0)
             messages.pop(oldest_id, None)
