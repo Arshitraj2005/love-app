@@ -5,18 +5,36 @@
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 <body>
-  <div id="chatBox"></div>
-  <input id="msgInput" placeholder="Type your message..." />
-  <button onclick="sendMessage()">Send</button>
+  <div id="loginBox">
+    <input id="passInput" type="password" placeholder="Enter secret..." />
+    <button onclick="checkPassword()">Unlock</button>
+  </div>
+
+  <div id="chatBox" style="display:none;"></div>
+  <input id="msgInput" placeholder="Type your message..." style="display:none;" />
+  <button onclick="sendMessage()" style="display:none;">Send</button>
 
   <script>
     const socket = io();
     const chatBox = document.getElementById('chatBox');
+    const correctPassword = "bhoot";
 
     let myId = localStorage.getItem('user_id');
     if (!myId) {
       myId = Math.random().toString(36).substring(2, 10);
       localStorage.setItem('user_id', myId);
+    }
+
+    function checkPassword() {
+      const entered = document.getElementById('passInput').value;
+      if (entered === correctPassword) {
+        document.getElementById('loginBox').style.display = 'none';
+        document.getElementById('chatBox').style.display = 'block';
+        document.getElementById('msgInput').style.display = 'inline';
+        document.querySelector('button[onclick="sendMessage()"]').style.display = 'inline';
+      } else {
+        alert("Wrong password. Try again.");
+      }
     }
 
     function sendMessage() {
