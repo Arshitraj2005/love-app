@@ -1,86 +1,40 @@
-<!-- templates/index.html -->
-<!doctype html>
+<!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>Self-Destruct Chat</title>
-  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-  <style>
-    body{font-family: Arial; max-width:700px;margin:30px auto}
-    #messages{border:1px solid #ddd;padding:10px;min-height:120px}
-    .msg{padding:8px;border-bottom:1px solid #eee}
-    #lockOverlay{display:none;position:fixed;inset:0;background:#000000cc;color:white;align-items:center;justify-content:center}
-  </style>
+  <title>WhisperFade</title>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 <body>
-  <h2>Self-Destruct Chat (Demo)</h2>
-  <div id="messages"></div>
-  <div style="margin-top:10px">
-    <input id="text" placeholder="Type message..." autocomplete="off" />
-    <button id="send">Send</button>
-  </div>
-  <div style="margin-top:8px">
-    <small>Type or move mouse to keep session alive. Inactivity of 60s clears messages.</small>
-  </div>
+  <input id="msgInput" placeholder="Type your message..." />
+  <button onclick="sendMessage()">Send</button>
+  <div id="chatBox"></div>
 
-<script>
-  const socket = io();
-  const room = 'main';
-  const user = 'user_'+Math.floor(Math.random()*9999);
+  <script>
+    const socket = io();
+    const chatBox = document.getElementById('chatBox');
 
-  const messagesDiv = document.getElementById('messages');
-  const input = document.getElementById('text');
-  const sendBtn = document.getElementById('send');
+    function sendMessage() {
+      const msg = document.getElementById('msgInput').value;
+      socket.emit('send_message', { message: msg });
+      document.getElementById('msgInput').value = '';
+    }
 
-  socket.on('connect', ()=>{
-    socket.emit('join', {room});
-  });
+    socket.on('new_message', data => {
+      const msg = document.createElement('div');
+      msg.id = data.id;
+      msg.innerText = data.message;
+      chatBox.appendChild(msg);
 
-  function renderMessages(list){
-    messagesDiv.innerHTML = '';
-    list.forEach(m=>{
-      const el = document.createElement('div'); el.className='msg'; el.dataset.id=m.id;
-      el.textContent = m.sender+': '+m.text + (m.seen? ' (seen)':'');
-      messagesDiv.appendChild(el);
-      // clicking marks seen
-      el.addEventListener('click', ()=>{
-        socket.emit('message_seen', {room, message_id: m.id});
-      });
+      // Simulate seen after 5 sec
+      setTimeout(() => {
+        socket.emit('seen', { id: data.id });
+      }, 5000);
     });
-  }
 
-  socket.on('messages', (data)=>{
-    renderMessages(data.messages || []);
-  });
-
-  socket.on('new_message', (data)=>{
-    // Only one message will be shown because server clears old ones
-    renderMessages([data.message]);
-  });
-
-  socket.on('messages_cleared', (data)=>{
-    messagesDiv.innerHTML = '';
-    console.log('cleared:', data);
-  });
-
-  sendBtn.onclick = ()=>{
-    const t = input.value.trim(); if(!t) return;
-    socket.emit('send_message', {room, text: t, sender: user});
-    input.value = '';
-  }
-
-  // client-side activity reporting to server
-  let activityDebounce = null;
-  function reportActivity(){
-    socket.emit('typing', {room, user});
-    // throttle
-    if(activityDebounce) return;
-    activityDebounce = setTimeout(()=> activityDebounce = null, 1000);
-  }
-
-  ['mousemove','keydown','click'].forEach(ev=> window.addEventListener(ev, reportActivity));
-
-  // when user clicks a message it will emit message_seen as above
-</script>
+    socket.on('delete_message', data => {
+      const msg = document.getElementById(data.id);
+      if (msg) msg.remove();
+    });
+  </script>
 </body>
 </html>
