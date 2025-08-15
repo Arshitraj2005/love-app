@@ -14,7 +14,7 @@ def handle_message(data):
             'sender_id': data['sender_id']
         }, broadcast=True)
 
-        # Keep only the latest 8 messages
+        # Keep only latest 8 messages
         if len(message_order) > 8:
             oldest_id = message_order.pop(0)
             messages.pop(oldest_id, None)
