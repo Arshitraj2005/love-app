@@ -1,10 +1,12 @@
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
-from threading import Timer
+from threading import Lock
 
 app = Flask(__name__)
 socketio = SocketIO(app)
 messages = {}
+message_order = []
+lock = Lock()
 
 @app.route('/')
 def index():
@@ -12,22 +14,32 @@ def index():
 
 @socketio.on('send_message')
 def handle_message(data):
-    msg_id = str(len(messages) + 1)
-    messages[msg_id] = data['message']
-    emit('new_message', {'id': msg_id, 'message': data['message']}, broadcast=True)
+    with lock:
+        msg_id = str(len(messages) + 1)
+        messages[msg_id] = {
+            'message': data['message'],
+            'sender_id': data['sender_id']
+        }
+        message_order.append(msg_id)
 
-    # Auto delete after 60 sec
-    Timer(60, lambda: delete_message(msg_id)).start()
+        emit('new_message', {
+            'id': msg_id,
+            'message': data['message'],
+            'sender_id': data['sender_id']
+        }, broadcast=True)
+
+        # Delete oldest if more than 4 messages
+        if len(message_order) > 4:
+            oldest_id = message_order.pop(0)
+            messages.pop(oldest_id, None)
+            emit('delete_message', {'id': oldest_id}, broadcast=True)
 
 @socketio.on('seen')
 def handle_seen(data):
     msg_id = data['id']
-    delete_message(msg_id)
-
-def delete_message(msg_id):
     if msg_id in messages:
-        del messages[msg_id]
-        socketio.emit('delete_message', {'id': msg_id}, broadcast=True)
+        messages.pop(msg_id, None)
+        emit('delete_message', {'id': msg_id}, broadcast=True)
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=10000)
+    socketio.run(app, debug=True)
